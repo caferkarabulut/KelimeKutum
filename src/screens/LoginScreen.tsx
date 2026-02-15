@@ -34,7 +34,7 @@ export default function LoginScreen({ navigation }: Props) {
         setLoading(true);
         try {
             await signInWithEmailAndPassword(auth, trimmedEmail, password);
-            // Navigation will happen automatically via auth state change
+
         } catch (err: any) {
             setError(getFirebaseErrorMessage(err));
         } finally {

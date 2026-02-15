@@ -82,7 +82,7 @@ export default function ResultScreen({ route, navigation }: Props) {
 
         setRetryLoading(true);
         try {
-            // Fetch word data for wrong IDs
+
             const wordsQuery = query(
                 collection(db, 'words'),
                 where('userId', '==', uid)
@@ -122,7 +122,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                 return;
             }
 
-            // Shuffle and limit to 20
+
             const shuffled = shuffle(questions);
             const selected = shuffled.slice(0, 20);
 

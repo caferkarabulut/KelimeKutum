@@ -68,7 +68,7 @@ export default function TestSetupScreen({ navigation }: Props) {
 
         setLoading(true);
         try {
-            // Fetch all user's active words
+
             const wordsQuery = query(
                 collection(db, 'words'),
                 where('userId', '==', uid),
@@ -97,7 +97,7 @@ export default function TestSetupScreen({ navigation }: Props) {
                 return;
             }
 
-            // Fetch lastWrongIds from user doc
+
             let lastWrongIds: string[] = [];
             try {
                 const userDoc = await getDoc(doc(db, 'users', uid));
@@ -111,10 +111,10 @@ export default function TestSetupScreen({ navigation }: Props) {
             const now = Date.now();
             const boostCount = Math.round(selectedSize * WRONG_BOOST_RATIO);
 
-            // Create word id set for quick lookup
+
             const activeWordIds = new Set(activeWords.map((w) => w.id));
 
-            // STEP 1: Wrong Boost
+
             const validWrongIds = lastWrongIds.filter((id) => activeWordIds.has(id));
             const wrongBoostIds = shuffle(validWrongIds).slice(0, boostCount);
             const wrongBoostSet = new Set(wrongBoostIds);
@@ -133,7 +133,7 @@ export default function TestSetupScreen({ navigation }: Props) {
                 }
             }
 
-            // STEP 2: Due words
+
             const remainingAfterWrong = selectedSize - wrongPick.length;
             const duePool: { word: WordData; direction: 'EN_TR' | 'TR_EN' }[] = [];
 
@@ -157,7 +157,7 @@ export default function TestSetupScreen({ navigation }: Props) {
                         direction = 'TR_EN';
                         nextReviewAt = word.trNextReviewAt;
                     } else {
-                        continue; // Not due
+                        continue;
                     }
                 } else {
                     direction = selectedMode;
@@ -172,7 +172,7 @@ export default function TestSetupScreen({ navigation }: Props) {
             const duePick = shuffledDue.slice(0, remainingAfterWrong);
             const duePickSet = new Set(duePick.map((p) => p.word.id));
 
-            // STEP 3: Fill remaining
+
             const remainingAfterDue = selectedSize - wrongPick.length - duePick.length;
             const restPool: { word: WordData; direction: 'EN_TR' | 'TR_EN' }[] = [];
 
@@ -192,7 +192,7 @@ export default function TestSetupScreen({ navigation }: Props) {
             const shuffledRest = shuffle(restPool);
             const fillPick = shuffledRest.slice(0, remainingAfterDue);
 
-            // Combine all
+
             const allPicks = [...wrongPick, ...duePick, ...fillPick];
             const finalShuffled = shuffle(allPicks);
 

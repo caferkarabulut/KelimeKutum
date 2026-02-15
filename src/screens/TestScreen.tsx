@@ -45,8 +45,8 @@ export default function TestScreen({ route, navigation }: Props) {
 
     const prompt = currentQuestion.direction === 'EN_TR' ? currentQuestion.en : currentQuestion.tr;
     const expected = currentQuestion.direction === 'EN_TR' ? currentQuestion.tr : currentQuestion.en;
-    const promptLabel = currentQuestion.direction === 'EN_TR' ? 'English' : 'Türkçe';
-    const answerLabel = currentQuestion.direction === 'EN_TR' ? 'Türkçe' : 'English';
+    const promptLabel = currentQuestion.direction === 'EN_TR' ? 'English' : 'Turkish';
+    const answerLabel = currentQuestion.direction === 'EN_TR' ? 'Turkish' : 'English';
 
     const updateProgress = async (wordId: string, direction: 'EN_TR' | 'TR_EN', isCorrect: boolean) => {
         try {
@@ -71,7 +71,7 @@ export default function TestScreen({ route, navigation }: Props) {
 
             const newProgress = calculateNextProgress(isCorrect, currentProgress);
 
-            // Update both nested progress and top-level nextReviewAt
+
             await updateDoc(wordRef, {
                 [progressField]: newProgress,
                 [topLevelField]: newProgress.nextReviewAt,
@@ -89,7 +89,7 @@ export default function TestScreen({ route, navigation }: Props) {
         const normalizedExpected = normalize(expected);
         const isCorrect = normalizedAnswer === normalizedExpected;
 
-        // Update SRS progress
+
         await updateProgress(currentQuestion.id, currentQuestion.direction, isCorrect);
 
         let newWrongItems = wrongItems;

@@ -105,7 +105,7 @@ export default function PoolScreen({ navigation }: Props) {
                     try {
                         await deleteDoc(doc(db, 'words', word.id));
 
-                        // Update user counters
+
                         const userRef = doc(db, 'users', uid);
                         const userSnap = await getDoc(userRef);
                         if (userSnap.exists()) {
@@ -137,18 +137,18 @@ export default function PoolScreen({ navigation }: Props) {
             const newIsActive = !word.isActive;
             await updateDoc(doc(db, 'words', word.id), { isActive: newIsActive });
 
-            // Update user counters
+
             const userRef = doc(db, 'users', uid);
             const userSnap = await getDoc(userRef);
             if (userSnap.exists()) {
                 if (newIsActive) {
-                    // Was mastered, now active
+
                     await updateDoc(userRef, {
                         activeWords: increment(1),
                         masteredWords: increment(-1),
                     });
                 } else {
-                    // Was active, now mastered
+
                     await updateDoc(userRef, {
                         activeWords: increment(-1),
                         masteredWords: increment(1),
@@ -164,7 +164,7 @@ export default function PoolScreen({ navigation }: Props) {
         }
     };
 
-    // Filter words based on search query and active filter
+
     const filteredWords = words.filter((word) => {
         if (showActiveOnly && !word.isActive) return false;
 

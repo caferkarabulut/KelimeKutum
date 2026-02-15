@@ -52,14 +52,14 @@ export default function RegisterScreen({ navigation }: Props) {
                 password
             );
 
-            // Create user document in Firestore
+
             await setDoc(doc(db, 'users', userCredential.user.uid), {
                 createdAt: serverTimestamp(),
                 askedWordIds: [],
                 testCount: 0,
             });
 
-            // Navigation will happen automatically via auth state change
+
         } catch (err: any) {
             setError(getFirebaseErrorMessage(err));
         } finally {

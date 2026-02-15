@@ -38,7 +38,7 @@ export default function HomeScreen({ navigation }: Props) {
         if (!uid) return;
 
         try {
-            // Fetch user stats
+
             const userRef = doc(db, 'users', uid);
             const userSnap = await getDoc(userRef);
 
@@ -53,7 +53,7 @@ export default function HomeScreen({ navigation }: Props) {
                 masteredWords = data.masteredWords || 0;
             }
 
-            // Fetch due count (MIXED mode - either direction)
+
             const now = new Date();
             const wordsQuery = query(
                 collection(db, 'words'),
@@ -124,7 +124,7 @@ export default function HomeScreen({ navigation }: Props) {
                 const trDue = trNext && (trNext instanceof Timestamp ? trNext.toDate() : new Date(trNext)) <= now;
 
                 if (enDue && trDue) {
-                    // Both due - pick random
+
                     const direction = Math.random() < 0.5 ? 'EN_TR' : 'TR_EN';
                     dueWords.push({ id: docSnap.id, en: data.en, tr: data.tr, direction });
                 } else if (enDue) {
@@ -140,7 +140,7 @@ export default function HomeScreen({ navigation }: Props) {
                 return;
             }
 
-            // Shuffle and limit to 20
+
             const shuffled = shuffle(dueWords);
             const selected = shuffled.slice(0, 20);
 
@@ -159,7 +159,7 @@ export default function HomeScreen({ navigation }: Props) {
         }
     };
 
-    // DEV ONLY - Seed 50 words
+
     const handleSeedWords = async () => {
         const uid = auth.currentUser?.uid;
         if (!uid) return;
@@ -193,7 +193,7 @@ export default function HomeScreen({ navigation }: Props) {
             }
             await Promise.all(promises);
 
-            // Update counters
+
             const userRef = doc(db, 'users', uid);
             const userSnap = await getDoc(userRef);
             if (userSnap.exists()) {
@@ -223,7 +223,7 @@ export default function HomeScreen({ navigation }: Props) {
         }
     };
 
-    // DEV ONLY - Init progress for existing words
+
     const handleInitProgress = async () => {
         const uid = auth.currentUser?.uid;
         if (!uid) return;
@@ -275,7 +275,7 @@ export default function HomeScreen({ navigation }: Props) {
                 <Text style={styles.email}>{auth.currentUser?.email}</Text>
             </View>
 
-            {/* Stats Dashboard */}
+
             <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <Text style={styles.statNumber}>{stats.totalWords}</Text>
@@ -291,7 +291,7 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
             </View>
 
-            {/* Menu Buttons */}
+
             <View style={styles.menuContainer}>
                 <TouchableOpacity
                     style={[styles.menuButton, styles.dueButton, (dueLoading || stats.dueCount === 0) && styles.buttonDisabled]}
@@ -330,7 +330,7 @@ export default function HomeScreen({ navigation }: Props) {
                     </TouchableOpacity>
                 </View>
 
-                {/* DEV ONLY */}
+
                 {__DEV__ && (
                     <View style={styles.devContainer}>
                         <TouchableOpacity

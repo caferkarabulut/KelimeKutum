@@ -59,7 +59,7 @@ export default function AddWordScreen({ navigation }: Props) {
             const snap = await getDoc(wordRef);
 
             if (snap.exists()) {
-                setError('Bu kelime zaten ekli / This word already exists');
+                setError('This word already exists');
                 setLoading(false);
                 return;
             }
@@ -80,7 +80,7 @@ export default function AddWordScreen({ navigation }: Props) {
                 createdAt: serverTimestamp(),
             });
 
-            // Update user counters
+
             const userRef = doc(db, 'users', uid);
             const userSnap = await getDoc(userRef);
 
@@ -147,7 +147,7 @@ export default function AddWordScreen({ navigation }: Props) {
                     </View>
                     <TextInput
                         style={styles.input}
-                        placeholder="Türkçe karşılığı"
+                        placeholder="Turkish translation"
                         value={tr}
                         onChangeText={setTr}
                         maxLength={MAX_TR}
