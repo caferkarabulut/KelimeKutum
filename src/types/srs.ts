@@ -18,7 +18,7 @@ export interface Word {
     isActive: boolean;
     enProgress: Progress;
     trProgress: Progress;
-    // Top-level for efficient querying
+
     enNextReviewAt: Timestamp | Date | null;
     trNextReviewAt: Timestamp | Date | null;
     createdAt: Timestamp | Date | null;
