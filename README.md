@@ -1,23 +1,27 @@
 # English Jar - Expo React Native App
 
-Kelime öğrenme uygulaması - Firebase Auth + Firestore + SRS (Spaced Repetition System).
+A spaced repetition vocabulary learning application built with React Native, Expo, and Firebase.
 
-## Çalıştırma
+## Features
+- **Spaced Repetition System (SRS):** Efficiently learn new words with a smart review algorithm.
+- **Cross-Platform:** Runs on Android, iOS, and Web.
+- **Firebase Integration:** Real-time data sync with Firestore and Authentication.
+- **Custom Tests:** Create tests based on your learning progress.
+
+## Getting Started
 
 ```bash
-# Hotspot/tunnel modunda başlat
+# Start the app in tunnel mode
 npx expo start --tunnel -c
 ```
 
-## Firebase Kurulumu
+## Firebase Setup
 
 ### 1. Firebase Config
-
-`src/firebase/firebase.ts` dosyasına Firebase Console'dan aldığın config'i yapıştır.
+Paste your Firebase project configuration into `src/firebase/firebase.ts`.
 
 ### 2. Firestore Security Rules
-
-Firebase Console → Firestore → Rules:
+Go to **Firebase Console → Firestore → Rules**:
 
 ```javascript
 rules_version = '2';
@@ -37,8 +41,7 @@ service cloud.firestore {
 ```
 
 ### 3. Firestore Composite Indexes
-
-Firebase Console → Firestore → Indexes → Create Index:
+Go to **Firebase Console → Firestore → Indexes → Create Index**:
 
 | Collection | Fields | Query Scope |
 |------------|--------|-------------|
@@ -46,34 +49,34 @@ Firebase Console → Firestore → Indexes → Create Index:
 | `words` | `userId` (asc), `isActive` (asc), `enNextReviewAt` (asc) | Collection |
 | `words` | `userId` (asc), `isActive` (asc), `trNextReviewAt` (asc) | Collection |
 
-> İlk query çalıştığında konsoldaki hata linkine tıklayarak da otomatik oluşturabilirsin.
+> You can also create these automatically by clicking the error link in the console when running your first query.
 
-## Proje Yapısı
+## Project Structure
 
 ```
 src/
 ├── firebase/
-│   └── firebase.ts          # Firebase config
+│   └── firebase.ts          # Firebase configuration
 ├── navigation/
-│   └── AppNavigator.tsx     # Navigation stack
+│   └── AppNavigator.tsx     # Navigation stack and routing
 ├── screens/
 │   ├── LoginScreen.tsx
 │   ├── RegisterScreen.tsx
-│   ├── HomeScreen.tsx       # Dashboard
+│   ├── HomeScreen.tsx       # Main dashboard
 │   ├── AddWordScreen.tsx
-│   ├── PoolScreen.tsx
-│   ├── TestSetupScreen.tsx  # Custom test
-│   ├── TestScreen.tsx
+│   ├── PoolScreen.tsx       # Word management
+│   ├── TestSetupScreen.tsx  # Test configuration
+│   ├── TestScreen.tsx       # Test interface
 │   └── ResultScreen.tsx
 ├── types/
-│   └── srs.ts               # SRS types & functions
+│   └── srs.ts               # SRS algorithms and type definitions
 └── utils/
-    └── firebaseErrors.ts    # Error messages
+    └── firebaseErrors.ts    # Error handling utilities
 ```
 
-## SRS Algoritması
+## SRS Algorithm Details
 
-- **Doğru cevap:** intervalDays x2 (1→2→4→8...), streak++
-- **Yanlış cevap:** intervalDays=0, 10 dk sonra tekrar, streak=0
-- **Due Test:** nextReviewAt ≤ now olan kelimeler
-- **Wrong Boost:** Son testteki yanlışların %30'u öncelikli
+- **Correct Answer:** Interval doubles (1 → 2 → 4 → 8 days...), streak increases.
+- **Wrong Answer:** Interval resets to 0, word re-appears in 10 minutes, streak resets.
+- **Due Test:** Words where `nextReviewAt` ≤ `now` are prioritized.
+- **Wrong Boost:** 30% of the test questions are prioritized from recently incorrect answers.
