@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { signOut } from 'firebase/auth';
 import { doc, setDoc, updateDoc, collection, query, where, getDocs, getDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { useFocusEffect } from '@react-navigation/native';
@@ -269,7 +270,10 @@ export default function HomeScreen({ navigation }: Props) {
     }
 
     return (
-        <View style={styles.container}>
+        <LinearGradient
+            colors={['#f8f9fa', '#e0e7ff']}
+            style={styles.container}
+        >
             <View style={styles.userInfo}>
                 <Text style={styles.emailLabel}>Giriş yapan:</Text>
                 <Text style={styles.email}>{auth.currentUser?.email}</Text>
@@ -367,14 +371,13 @@ export default function HomeScreen({ navigation }: Props) {
             <TouchableOpacity style={styles.logoutButton} onPress={() => navigation.navigate('Profile')}>
                 <Text style={styles.logoutButtonText}>👤 Profil & Ayarlar</Text>
             </TouchableOpacity>
-        </View>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
         paddingHorizontal: 20,
         paddingTop: 20,
     },

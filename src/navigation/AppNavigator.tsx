@@ -66,7 +66,16 @@ function AuthStack() {
 
 function AppStack() {
     return (
-        <Stack.Navigator screenOptions={{ headerShown: true }}>
+        <Stack.Navigator 
+            screenOptions={{ 
+                headerShown: true,
+                headerStyle: { backgroundColor: '#5856D6' },
+                headerTintColor: '#fff',
+                headerTitleStyle: { fontWeight: '600', fontSize: 18 },
+                headerShadowVisible: false,
+                contentStyle: { backgroundColor: '#f8f9fa' }
+            }}
+        >
             <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Ana Ekran' }} />
             <Stack.Screen name="AddWord" component={AddWordScreen} options={{ title: 'Kelime Ekle' }} />
             <Stack.Screen name="Pool" component={PoolScreen} options={{ title: 'Havuzum' }} />
