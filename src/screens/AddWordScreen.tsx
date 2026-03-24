@@ -59,7 +59,7 @@ export default function AddWordScreen({ navigation }: Props) {
             const snap = await getDoc(wordRef);
 
             if (snap.exists()) {
-                setError('This word already exists');
+                setError('Bu kelime zaten ekli');
                 setLoading(false);
                 return;
             }
@@ -104,11 +104,11 @@ export default function AddWordScreen({ navigation }: Props) {
             setEn('');
             setTr('');
 
-            Alert.alert('Success', 'Word saved!', [
-                { text: 'OK', onPress: () => navigation.goBack() },
+            Alert.alert('Başarılı', 'Kelime kaydedildi!', [
+                { text: 'Tamam', onPress: () => navigation.goBack() },
             ]);
         } catch (err: any) {
-            setError(err.message || 'Failed to save word');
+            setError(err.message || 'Kelime kaydedilemedi');
         } finally {
             setLoading(false);
         }
@@ -120,18 +120,18 @@ export default function AddWordScreen({ navigation }: Props) {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <View style={styles.innerContainer}>
-                <Text style={styles.title}>Add New Word</Text>
+                <Text style={styles.title}>Yeni Kelime Ekle</Text>
 
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 <View style={styles.inputGroup}>
                     <View style={styles.labelRow}>
-                        <Text style={styles.label}>English</Text>
+                        <Text style={styles.label}>İngilizce</Text>
                         <Text style={styles.charCount}>{en.length}/{MAX_EN}</Text>
                     </View>
                     <TextInput
                         style={styles.input}
-                        placeholder="Enter English word"
+                        placeholder="İngilizce kelime"
                         value={en}
                         onChangeText={setEn}
                         autoCapitalize="none"
@@ -142,12 +142,12 @@ export default function AddWordScreen({ navigation }: Props) {
 
                 <View style={styles.inputGroup}>
                     <View style={styles.labelRow}>
-                        <Text style={styles.label}>Turkish</Text>
+                        <Text style={styles.label}>Türkçe</Text>
                         <Text style={styles.charCount}>{tr.length}/{MAX_TR}</Text>
                     </View>
                     <TextInput
                         style={styles.input}
-                        placeholder="Turkish translation"
+                        placeholder="Türkçe karşılığı"
                         value={tr}
                         onChangeText={setTr}
                         maxLength={MAX_TR}
@@ -160,7 +160,7 @@ export default function AddWordScreen({ navigation }: Props) {
                     disabled={loading}
                 >
                     <Text style={styles.buttonText}>
-                        {loading ? 'Saving...' : 'Save'}
+                        {loading ? 'Kaydediliyor...' : 'Kaydet'}
                     </Text>
                 </TouchableOpacity>
             </View>

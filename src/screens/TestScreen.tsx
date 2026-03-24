@@ -45,8 +45,8 @@ export default function TestScreen({ route, navigation }: Props) {
 
     const prompt = currentQuestion.direction === 'EN_TR' ? currentQuestion.en : currentQuestion.tr;
     const expected = currentQuestion.direction === 'EN_TR' ? currentQuestion.tr : currentQuestion.en;
-    const promptLabel = currentQuestion.direction === 'EN_TR' ? 'English' : 'Turkish';
-    const answerLabel = currentQuestion.direction === 'EN_TR' ? 'Turkish' : 'English';
+    const promptLabel = currentQuestion.direction === 'EN_TR' ? 'İngilizce' : 'Türkçe';
+    const answerLabel = currentQuestion.direction === 'EN_TR' ? 'Türkçe' : 'İngilizce';
 
     const updateProgress = async (wordId: string, direction: 'EN_TR' | 'TR_EN', isCorrect: boolean) => {
         try {

@@ -188,14 +188,14 @@ export default function PoolScreen({ navigation }: Props) {
                     onPress={() => handleToggleActive(item)}
                 >
                     <Text style={styles.statusButtonText}>
-                        {item.isActive ? 'Active' : 'Mastered'}
+                        {item.isActive ? 'Aktif' : 'Ezberlendi'}
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={styles.deleteButton}
                     onPress={() => handleDelete(item)}
                 >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
+                    <Text style={styles.deleteButtonText}>Sil</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -213,7 +213,7 @@ export default function PoolScreen({ navigation }: Props) {
         <View style={styles.container}>
             <TextInput
                 style={styles.searchInput}
-                placeholder="Search (EN/TR)"
+                placeholder="Ara (İng/Tr)"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoCapitalize="none"
@@ -221,9 +221,9 @@ export default function PoolScreen({ navigation }: Props) {
             />
 
             <View style={styles.filterRow}>
-                <Text style={styles.totalText}>Total: {filteredWords.length}</Text>
+                <Text style={styles.totalText}>Toplam: {filteredWords.length}</Text>
                 <View style={styles.filterToggle}>
-                    <Text style={styles.filterLabel}>Active only</Text>
+                    <Text style={styles.filterLabel}>Sadece Aktif</Text>
                     <Switch
                         value={showActiveOnly}
                         onValueChange={setShowActiveOnly}
@@ -236,12 +236,12 @@ export default function PoolScreen({ navigation }: Props) {
 
             {words.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No words yet</Text>
-                    <Text style={styles.emptySubtext}>Add your first word!</Text>
+                    <Text style={styles.emptyText}>Henüz kelime yok</Text>
+                    <Text style={styles.emptySubtext}>İlk kelimeni ekle!</Text>
                 </View>
             ) : filteredWords.length === 0 ? (
                 <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No matches found</Text>
+                    <Text style={styles.emptyText}>Eşleşme bulunamadı</Text>
                 </View>
             ) : (
                 <FlatList

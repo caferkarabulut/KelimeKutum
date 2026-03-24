@@ -30,17 +30,17 @@ export default function RegisterScreen({ navigation }: Props) {
         const trimmedEmail = email.trim();
 
         if (!trimmedEmail || !password || !confirmPassword) {
-            setError('Please fill in all fields');
+            setError('Lütfen tüm alanları doldurun');
             return;
         }
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError('Şifreler eşleşmiyor');
             return;
         }
 
         if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+            setError('Şifre en az 6 karakter olmalı');
             return;
         }
 
@@ -52,13 +52,11 @@ export default function RegisterScreen({ navigation }: Props) {
                 password
             );
 
-
             await setDoc(doc(db, 'users', userCredential.user.uid), {
                 createdAt: serverTimestamp(),
                 askedWordIds: [],
                 testCount: 0,
             });
-
 
         } catch (err: any) {
             setError(getFirebaseErrorMessage(err));
@@ -74,13 +72,13 @@ export default function RegisterScreen({ navigation }: Props) {
         >
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.innerContainer}>
-                    <Text style={styles.title}>Register</Text>
+                    <Text style={styles.title}>Kayıt Ol</Text>
 
                     {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                     <TextInput
                         style={styles.input}
-                        placeholder="Email"
+                        placeholder="E-posta"
                         value={email}
                         onChangeText={setEmail}
                         autoCapitalize="none"
@@ -90,7 +88,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
                     <TextInput
                         style={styles.input}
-                        placeholder="Password"
+                        placeholder="Şifre"
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
@@ -99,7 +97,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
                     <TextInput
                         style={styles.input}
-                        placeholder="Confirm Password"
+                        placeholder="Şifreyi Onayla"
                         value={confirmPassword}
                         onChangeText={setConfirmPassword}
                         secureTextEntry
@@ -112,7 +110,7 @@ export default function RegisterScreen({ navigation }: Props) {
                         disabled={loading}
                     >
                         <Text style={styles.buttonText}>
-                            {loading ? 'Registering...' : 'Register'}
+                            {loading ? 'Kayıt Yapılıyor...' : 'Kayıt Ol'}
                         </Text>
                     </TouchableOpacity>
 
@@ -120,7 +118,7 @@ export default function RegisterScreen({ navigation }: Props) {
                         style={styles.linkButton}
                         onPress={() => navigation.goBack()}
                     >
-                        <Text style={styles.linkText}>Already have an account? Login</Text>
+                        <Text style={styles.linkText}>Zaten hesabın var mı? Giriş Yap</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>

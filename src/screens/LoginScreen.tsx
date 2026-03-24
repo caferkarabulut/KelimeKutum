@@ -27,7 +27,7 @@ export default function LoginScreen({ navigation }: Props) {
         const trimmedEmail = email.trim();
 
         if (!trimmedEmail || !password) {
-            setError('Please fill in all fields');
+            setError('Lütfen tüm alanları doldurun');
             return;
         }
 
@@ -48,13 +48,13 @@ export default function LoginScreen({ navigation }: Props) {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <View style={styles.innerContainer}>
-                <Text style={styles.title}>Login</Text>
+                <Text style={styles.title}>Giriş Yap</Text>
 
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                 <TextInput
                     style={styles.input}
-                    placeholder="Email"
+                    placeholder="E-posta"
                     value={email}
                     onChangeText={setEmail}
                     autoCapitalize="none"
@@ -64,7 +64,7 @@ export default function LoginScreen({ navigation }: Props) {
 
                 <TextInput
                     style={styles.input}
-                    placeholder="Password"
+                    placeholder="Şifre"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -77,7 +77,7 @@ export default function LoginScreen({ navigation }: Props) {
                     disabled={loading}
                 >
                     <Text style={styles.buttonText}>
-                        {loading ? 'Logging in...' : 'Login'}
+                        {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
                     </Text>
                 </TouchableOpacity>
 
@@ -85,7 +85,7 @@ export default function LoginScreen({ navigation }: Props) {
                     style={styles.linkButton}
                     onPress={() => navigation.navigate('Register')}
                 >
-                    <Text style={styles.linkText}>Don't have an account? Register</Text>
+                    <Text style={styles.linkText}>Hesabın yok mu? Kayıt Ol</Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>

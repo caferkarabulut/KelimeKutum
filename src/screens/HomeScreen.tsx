@@ -251,10 +251,10 @@ export default function HomeScreen({ navigation }: Props) {
             });
 
             await Promise.all(promises);
-            Alert.alert('Success', `Progress initialized for ${promises.length} words`);
+            Alert.alert('Başarılı', `${promises.length} kelime için ilerleme başlatıldı`);
             fetchStats();
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Init failed');
+            Alert.alert('Hata', err.message || 'Başlatma başarısız');
         } finally {
             setInitLoading(false);
         }
@@ -271,7 +271,7 @@ export default function HomeScreen({ navigation }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.userInfo}>
-                <Text style={styles.emailLabel}>Logged in as:</Text>
+                <Text style={styles.emailLabel}>Giriş yapan:</Text>
                 <Text style={styles.email}>{auth.currentUser?.email}</Text>
             </View>
 
@@ -279,15 +279,15 @@ export default function HomeScreen({ navigation }: Props) {
             <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <Text style={styles.statNumber}>{stats.totalWords}</Text>
-                    <Text style={styles.statLabel}>Total</Text>
+                    <Text style={styles.statLabel}>Toplam</Text>
                 </View>
                 <View style={styles.statCard}>
                     <Text style={[styles.statNumber, { color: '#34C759' }]}>{stats.activeWords}</Text>
-                    <Text style={styles.statLabel}>Active</Text>
+                    <Text style={styles.statLabel}>Aktif</Text>
                 </View>
                 <View style={styles.statCard}>
                     <Text style={[styles.statNumber, { color: '#FF9500' }]}>{stats.dueCount}</Text>
-                    <Text style={styles.statLabel}>Due</Text>
+                    <Text style={styles.statLabel}>Tekrar</Text>
                 </View>
             </View>
 
@@ -302,7 +302,7 @@ export default function HomeScreen({ navigation }: Props) {
                         <ActivityIndicator color="#fff" />
                     ) : (
                         <Text style={styles.menuButtonText}>
-                            Start Due Test ({stats.dueCount})
+                            Tekrara Başla ({stats.dueCount})
                         </Text>
                     )}
                 </TouchableOpacity>
@@ -311,7 +311,7 @@ export default function HomeScreen({ navigation }: Props) {
                     style={[styles.menuButton, styles.customButton]}
                     onPress={() => navigation.navigate('TestSetup')}
                 >
-                    <Text style={styles.menuButtonText}>Start Custom Test</Text>
+                    <Text style={styles.menuButtonText}>Test Oluştur</Text>
                 </TouchableOpacity>
 
                 <View style={styles.rowButtons}>
@@ -319,14 +319,14 @@ export default function HomeScreen({ navigation }: Props) {
                         style={[styles.halfButton, styles.poolButton]}
                         onPress={() => navigation.navigate('Pool')}
                     >
-                        <Text style={styles.halfButtonText}>My Pool</Text>
+                        <Text style={styles.halfButtonText}>Havuzum</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[styles.halfButton, styles.addButton]}
                         onPress={() => navigation.navigate('AddWord')}
                     >
-                        <Text style={styles.halfButtonText}>Add Word</Text>
+                        <Text style={styles.halfButtonText}>Kelime Ekle</Text>
                     </TouchableOpacity>
                 </View>
 

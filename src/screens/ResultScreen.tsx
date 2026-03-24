@@ -117,7 +117,7 @@ export default function ResultScreen({ route, navigation }: Props) {
             }
 
             if (questions.length === 0) {
-                Alert.alert('Error', 'Could not find the wrong words');
+                Alert.alert('Hata', 'Yanlış yapılan kelimeler bulunamadı');
                 setRetryLoading(false);
                 return;
             }
@@ -128,7 +128,7 @@ export default function ResultScreen({ route, navigation }: Props) {
 
             navigation.replace('Test', { questions: selected, mode });
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to start retry test');
+            Alert.alert('Hata', err.message || 'Test başlatılamadı');
         } finally {
             setRetryLoading(false);
         }
@@ -144,28 +144,28 @@ export default function ResultScreen({ route, navigation }: Props) {
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <View style={[styles.scoreContainer, { borderColor: getScoreColor() }]}>
                 <Text style={[styles.scoreText, { color: getScoreColor() }]}>{score}%</Text>
-                <Text style={styles.scoreLabel}>Score</Text>
+                <Text style={styles.scoreLabel}>Skor</Text>
             </View>
 
             <View style={styles.statsContainer}>
                 <View style={styles.statBox}>
                     <Text style={[styles.statNumber, { color: '#34C759' }]}>{correct}</Text>
-                    <Text style={styles.statLabel}>Correct</Text>
+                    <Text style={styles.statLabel}>Doğru</Text>
                 </View>
                 <View style={styles.statBox}>
                     <Text style={[styles.statNumber, { color: '#FF3B30' }]}>{wrong}</Text>
-                    <Text style={styles.statLabel}>Wrong</Text>
+                    <Text style={styles.statLabel}>Yanlış</Text>
                 </View>
             </View>
 
             {wrongItems.length > 0 && (
                 <View style={styles.wrongSection}>
-                    <Text style={styles.wrongTitle}>Wrong Answers:</Text>
+                    <Text style={styles.wrongTitle}>Yanlış Cevaplar:</Text>
                     {wrongItems.map((item, index) => (
                         <View key={index} style={styles.wrongCard}>
                             <Text style={styles.wrongPrompt}>{item.prompt}</Text>
-                            <Text style={styles.wrongExpected}>Expected: {item.expected}</Text>
-                            <Text style={styles.wrongAnswer}>Your answer: {item.userAnswer || '(empty)'}</Text>
+                            <Text style={styles.wrongExpected}>Doğru: {item.expected}</Text>
+                            <Text style={styles.wrongAnswer}>Senin cevabın: {item.userAnswer || '(boş)'}</Text>
                         </View>
                     ))}
                 </View>
@@ -181,7 +181,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                         {retryLoading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Retry Wrong Only ({wrongIds.length})</Text>
+                            <Text style={styles.buttonText}>Sadece Yanlışları Tekrarla ({wrongIds.length})</Text>
                         )}
                     </TouchableOpacity>
                 )}
@@ -190,7 +190,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                     style={styles.homeButton}
                     onPress={() => navigation.navigate('Home')}
                 >
-                    <Text style={styles.buttonText}>Back to Home</Text>
+                    <Text style={styles.buttonText}>Ana Ekrana Dön</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>

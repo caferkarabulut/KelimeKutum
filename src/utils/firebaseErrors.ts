@@ -3,20 +3,20 @@ export function getFirebaseErrorMessage(error: any): string {
 
     switch (code) {
         case 'auth/email-already-in-use':
-            return 'This email is already registered.';
+            return 'Bu e-posta adresi zaten kullanımda.';
         case 'auth/weak-password':
-            return 'Password too weak (min 6 chars).';
+            return 'Şifre çok zayıf (en az 6 karakter).';
         case 'auth/invalid-email':
-            return 'Invalid email format.';
+            return 'Geçersiz e-posta formatı.';
         case 'auth/user-not-found':
-            return 'User not found.';
+            return 'Kullanıcı bulunamadı.';
         case 'auth/wrong-password':
-            return 'Wrong password.';
+            return 'Hatalı şifre.';
         case 'auth/invalid-credential':
-            return 'Invalid email or password.';
+            return 'E-posta veya şifre hatalı.';
         case 'auth/too-many-requests':
-            return 'Too many attempts. Please wait.';
+            return 'Çok fazla deneme yapıldı. Lütfen bekleyin.';
         default:
-            return 'An error occurred.';
+            return 'Bir hata oluştu.';
     }
 }

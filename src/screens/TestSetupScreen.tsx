@@ -17,9 +17,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'TestSetup'>;
 
 const TEST_SIZES = [10, 20, 30, 50] as const;
 const TEST_MODES: { value: TestMode; label: string }[] = [
-    { value: 'EN_TR', label: 'EN → TR' },
-    { value: 'TR_EN', label: 'TR → EN' },
-    { value: 'MIXED', label: 'Mixed' },
+    { value: 'EN_TR', label: 'İng → Tr' },
+    { value: 'TR_EN', label: 'Tr → İng' },
+    { value: 'MIXED', label: 'Karışık' },
 ];
 const REQUIRED_ACTIVE_WORDS = 50;
 const WRONG_BOOST_RATIO = 0.3;
@@ -90,8 +90,8 @@ export default function TestSetupScreen({ navigation }: Props) {
 
             if (activeWords.length < REQUIRED_ACTIVE_WORDS) {
                 Alert.alert(
-                    'Not enough words',
-                    `Add/activate at least ${REQUIRED_ACTIVE_WORDS} words to start tests. Active: ${activeWords.length}.`
+                    'Yetersiz Kelime',
+                    `Test başlatmak için en az ${REQUIRED_ACTIVE_WORDS} aktif kelimeniz olmalı. Aktif: ${activeWords.length}.`
                 );
                 setLoading(false);
                 return;
@@ -225,9 +225,9 @@ export default function TestSetupScreen({ navigation }: Props) {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Custom Test</Text>
+            <Text style={styles.title}>Test Oluştur</Text>
 
-            <Text style={styles.sectionTitle}>Test Size</Text>
+            <Text style={styles.sectionTitle}>Soru Sayısı</Text>
             <View style={styles.optionsContainer}>
                 {TEST_SIZES.map((size) => (
                     <TouchableOpacity
@@ -250,7 +250,7 @@ export default function TestSetupScreen({ navigation }: Props) {
                 ))}
             </View>
 
-            <Text style={styles.sectionTitle}>Mode</Text>
+            <Text style={styles.sectionTitle}>Mod</Text>
             <View style={styles.optionsContainer}>
                 {TEST_MODES.map((mode) => (
                     <TouchableOpacity
