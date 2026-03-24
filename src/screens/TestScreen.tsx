@@ -8,6 +8,7 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import * as Speech from 'expo-speech';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
 import { calculateNextProgress, Progress } from '../types/srs';
@@ -140,14 +141,25 @@ export default function TestScreen({ route, navigation }: Props) {
 
             <View style={styles.questionContainer}>
                 <Text style={styles.promptLabel}>{promptLabel}:</Text>
-                <Text style={styles.promptText}>{prompt}</Text>
+                <View style={styles.promptRow}>
+                    <Text style={styles.promptText}>{prompt}</Text>
+                    <TouchableOpacity
+                        style={styles.speakButton}
+                        onPress={() => {
+                            const lang = currentQuestion.direction === 'EN_TR' ? 'en-US' : 'tr-TR';
+                            Speech.speak(prompt, { language: lang });
+                        }}
+                    >
+                        <Text style={styles.speakIcon}>🔊</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View style={styles.answerContainer}>
                 <Text style={styles.answerLabel}>{answerLabel}:</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder={`Enter ${answerLabel}`}
+                    placeholder="Cevabınızı yazın..."
                     value={userAnswer}
                     onChangeText={setUserAnswer}
                     autoCapitalize="none"
@@ -161,7 +173,7 @@ export default function TestScreen({ route, navigation }: Props) {
                 disabled={!userAnswer.trim() || isSubmitting}
             >
                 <Text style={styles.buttonText}>
-                    {isSubmitting ? 'Saving...' : isLastQuestion ? 'Finish' : 'Next'}
+                    {isSubmitting ? 'Kaydediliyor...' : isLastQuestion ? 'Bitir' : 'Sonraki'}
                 </Text>
             </TouchableOpacity>
         </KeyboardAvoidingView>
@@ -200,6 +212,18 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
+    },
+    promptRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    speakButton: {
+        padding: 6,
+    },
+    speakIcon: {
+        fontSize: 22,
     },
     answerContainer: {
         marginBottom: 24,

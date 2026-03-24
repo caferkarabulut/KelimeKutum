@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import * as Speech from 'expo-speech';
 import {
     View,
     Text,
@@ -179,7 +180,15 @@ export default function PoolScreen({ navigation }: Props) {
     const renderItem = ({ item }: { item: Word }) => (
         <View style={[styles.card, !item.isActive && styles.cardInactive]}>
             <View style={styles.cardContent}>
-                <Text style={[styles.enText, !item.isActive && styles.textInactive]}>{item.en}</Text>
+                <View style={styles.wordRow}>
+                    <Text style={[styles.enText, !item.isActive && styles.textInactive]}>{item.en}</Text>
+                    <TouchableOpacity
+                        style={styles.speakButton}
+                        onPress={() => Speech.speak(item.en, { language: 'en-US' })}
+                    >
+                        <Text style={styles.speakIcon}>🔊</Text>
+                    </TouchableOpacity>
+                </View>
                 <Text style={[styles.trText, !item.isActive && styles.textInactive]}>{item.tr}</Text>
             </View>
             <View style={styles.cardActions}>
@@ -319,6 +328,17 @@ const styles = StyleSheet.create({
     },
     cardContent: {
         flex: 1,
+    },
+    wordRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    speakButton: {
+        padding: 4,
+    },
+    speakIcon: {
+        fontSize: 18,
     },
     enText: {
         fontSize: 17,
