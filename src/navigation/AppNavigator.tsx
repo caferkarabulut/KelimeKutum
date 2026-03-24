@@ -14,6 +14,7 @@ import PoolScreen from '../screens/PoolScreen';
 import TestSetupScreen from '../screens/TestSetupScreen';
 import TestScreen from '../screens/TestScreen';
 import ResultScreen from '../screens/ResultScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 export interface Question {
     id: string;
@@ -36,6 +37,7 @@ export type RootStackParamList = {
     AddWord: undefined;
     Pool: undefined;
     TestSetup: undefined;
+    Profile: undefined;
     Test: { questions: Question[]; mode: TestMode; isDueTest?: boolean };
     Result: {
         score: number;
@@ -61,12 +63,13 @@ function AuthStack() {
 function AppStack() {
     return (
         <Stack.Navigator screenOptions={{ headerShown: true }}>
-            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Dashboard' }} />
-            <Stack.Screen name="AddWord" component={AddWordScreen} options={{ title: 'Add Word' }} />
-            <Stack.Screen name="Pool" component={PoolScreen} options={{ title: 'My Pool' }} />
-            <Stack.Screen name="TestSetup" component={TestSetupScreen} options={{ title: 'Custom Test' }} />
+            <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Ana Ekran' }} />
+            <Stack.Screen name="AddWord" component={AddWordScreen} options={{ title: 'Kelime Ekle' }} />
+            <Stack.Screen name="Pool" component={PoolScreen} options={{ title: 'Havuzum' }} />
+            <Stack.Screen name="TestSetup" component={TestSetupScreen} options={{ title: 'Test Oluştur' }} />
             <Stack.Screen name="Test" component={TestScreen} options={{ title: 'Test', headerBackVisible: false }} />
-            <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Result', headerBackVisible: false }} />
+            <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Sonuç', headerBackVisible: false }} />
+            <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profil' }} />
         </Stack.Navigator>
     );
 }

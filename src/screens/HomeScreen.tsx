@@ -351,8 +351,8 @@ export default function HomeScreen({ navigation }: Props) {
                 )}
             </View>
 
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutButtonText}>Logout</Text>
+            <TouchableOpacity style={styles.logoutButton} onPress={() => navigation.navigate('Profile')}>
+                <Text style={styles.logoutButtonText}>👤 Profil & Ayarlar</Text>
             </TouchableOpacity>
         </View>
     );
