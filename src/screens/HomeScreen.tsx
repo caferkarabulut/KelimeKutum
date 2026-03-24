@@ -337,6 +337,13 @@ export default function HomeScreen({ navigation }: Props) {
                     <Text style={styles.menuButtonText}>📊 İstatistikler</Text>
                 </TouchableOpacity>
 
+                <TouchableOpacity
+                    style={[styles.menuButton, { backgroundColor: '#FF9500' }]}
+                    onPress={() => navigation.navigate('Achievements')}
+                >
+                    <Text style={styles.menuButtonText}>🏆 Başarımlar</Text>
+                </TouchableOpacity>
+
                 {__DEV__ && (
                     <View style={styles.devContainer}>
                         <TouchableOpacity

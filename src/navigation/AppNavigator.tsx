@@ -16,6 +16,7 @@ import TestScreen from '../screens/TestScreen';
 import ResultScreen from '../screens/ResultScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import StatsScreen from '../screens/StatsScreen';
+import AchievementsScreen from '../screens/AchievementsScreen';
 
 export interface Question {
     id: string;
@@ -40,6 +41,7 @@ export type RootStackParamList = {
     TestSetup: undefined;
     Profile: undefined;
     Stats: undefined;
+    Achievements: undefined;
     Test: { questions: Question[]; mode: TestMode; isDueTest?: boolean };
     Result: {
         score: number;
@@ -73,6 +75,7 @@ function AppStack() {
             <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Sonuç', headerBackVisible: false }} />
             <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profil' }} />
             <Stack.Screen name="Stats" component={StatsScreen} options={{ title: 'İstatistikler' }} />
+            <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ title: 'Başarımlar' }} />
         </Stack.Navigator>
     );
 }
