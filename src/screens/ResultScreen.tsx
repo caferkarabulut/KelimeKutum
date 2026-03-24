@@ -8,7 +8,7 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
-import { doc, updateDoc, serverTimestamp, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, setDoc, getDoc, collection, query, where, getDocs, increment } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebase';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList, Question } from '../navigation/AppNavigator';
@@ -44,6 +44,9 @@ export default function ResultScreen({ route, navigation }: Props) {
                     await updateDoc(userRef, {
                         lastWrongIds: wrongIds,
                         lastWrongUpdatedAt: serverTimestamp(),
+                        totalTests: increment(1),
+                        totalCorrect: increment(correct),
+                        totalWrong: increment(wrong),
                     });
                 } else {
                     await setDoc(userRef, {
@@ -53,6 +56,9 @@ export default function ResultScreen({ route, navigation }: Props) {
                         totalWords: 0,
                         activeWords: 0,
                         masteredWords: 0,
+                        totalTests: 1,
+                        totalCorrect: correct,
+                        totalWrong: wrong,
                     });
                 }
 

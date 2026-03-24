@@ -330,6 +330,12 @@ export default function HomeScreen({ navigation }: Props) {
                     </TouchableOpacity>
                 </View>
 
+                <TouchableOpacity
+                    style={[styles.menuButton, { backgroundColor: '#5856D6' }]}
+                    onPress={() => navigation.navigate('Stats')}
+                >
+                    <Text style={styles.menuButtonText}>📊 İstatistikler</Text>
+                </TouchableOpacity>
 
                 {__DEV__ && (
                     <View style={styles.devContainer}>
