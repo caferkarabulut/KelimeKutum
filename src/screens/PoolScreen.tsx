@@ -12,6 +12,7 @@ import {
     RefreshControl,
     Switch,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
     collection,
     query,
@@ -25,30 +26,27 @@ import {
     getDoc,
 } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebase';
+import { useTheme } from '../context/ThemeContext';
+import type { Word } from '../types/srs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pool'>;
-
-interface Word {
-    id: string;
-    en: string;
-    tr: string;
-    enNorm?: string;
-    isActive: boolean;
-}
+type SortMode = 'newest' | 'alphabetical' | 'most_wrong';
 
 function normalize(text: string): string {
     return text.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 export default function PoolScreen({ navigation }: Props) {
+    const { colors } = useTheme();
     const [words, setWords] = useState<Word[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [showActiveOnly, setShowActiveOnly] = useState(false);
+    const [sortMode, setSortMode] = useState<SortMode>('newest');
 
     const fetchWords = useCallback(async () => {
         const uid = auth.currentUser?.uid;
@@ -68,13 +66,26 @@ export default function PoolScreen({ navigation }: Props) {
                 orderBy('createdAt', 'desc')
             );
             const snapshot = await getDocs(q);
-            const fetchedWords: Word[] = snapshot.docs.map((docSnap) => ({
-                id: docSnap.id,
-                en: docSnap.data().en,
-                tr: docSnap.data().tr,
-                enNorm: docSnap.data().enNorm,
-                isActive: docSnap.data().isActive ?? true,
-            }));
+            const fetchedWords: Word[] = snapshot.docs.map((docSnap) => {
+                const data = docSnap.data();
+                const meanings: string[] = data.meanings && Array.isArray(data.meanings)
+                    ? data.meanings
+                    : (data.tr ? data.tr.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []);
+                return {
+                    id: docSnap.id,
+                    userId: data.userId || uid,
+                    en: data.en,
+                    tr: data.tr,
+                    meanings,
+                    enNorm: data.enNorm,
+                    isActive: data.isActive ?? true,
+                    enProgress: data.enProgress,
+                    trProgress: data.trProgress,
+                    enNextReviewAt: data.enNextReviewAt,
+                    trNextReviewAt: data.trNextReviewAt,
+                    createdAt: data.createdAt,
+                };
+            });
             setWords(fetchedWords);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch words');
@@ -175,21 +186,59 @@ export default function PoolScreen({ navigation }: Props) {
         const trMatch = normalize(word.tr).includes(normalizedQuery);
         const enNormMatch = word.enNorm ? word.enNorm.includes(normalizedQuery) : false;
         return enMatch || trMatch || enNormMatch;
+    }).sort((a, b) => {
+        if (sortMode === 'alphabetical') {
+            return a.en.localeCompare(b.en);
+        } else if (sortMode === 'most_wrong') {
+            const aWrong = (a.enProgress?.wrongCount || 0) + (a.trProgress?.wrongCount || 0);
+            const bWrong = (b.enProgress?.wrongCount || 0) + (b.trProgress?.wrongCount || 0);
+            return bWrong - aWrong;
+        } else {
+            // newest
+            const aTime = a.createdAt ? (a.createdAt as any).toMillis?.() || 0 : 0;
+            const bTime = b.createdAt ? (b.createdAt as any).toMillis?.() || 0 : 0;
+            return bTime - aTime;
+        }
     });
 
-    const renderItem = ({ item }: { item: Word }) => (
+    const renderItem = ({ item }: { item: Word }) => {
+        const enWrong = item.enProgress?.wrongCount || 0;
+        const trWrong = item.trProgress?.wrongCount || 0;
+        const totalWrong = enWrong + trWrong;
+        const enStreak = item.enProgress?.streak || 0;
+        const trStreak = item.trProgress?.streak || 0;
+        const maxStreak = Math.max(enStreak, trStreak);
+
+        const lastReview = item.enProgress?.lastTestedAt 
+            ? new Date(item.enProgress.lastTestedAt).toLocaleDateString()
+            : 'Hiç test edilmedi';
+
+        return (
         <View style={[styles.card, !item.isActive && styles.cardInactive]}>
             <View style={styles.cardContent}>
                 <View style={styles.wordRow}>
                     <Text style={[styles.enText, !item.isActive && styles.textInactive]}>{item.en}</Text>
                     <TouchableOpacity
                         style={styles.speakButton}
-                        onPress={() => Speech.speak(item.en, { language: 'en-US' })}
+                        onPress={async () => {
+                            try {
+                                if (await Speech.isSpeakingAsync()) await Speech.stop();
+                                Speech.speak(item.en, { language: 'en', rate: 0.8 });
+                            } catch (e) {
+                                console.warn('Speech error:', e);
+                            }
+                        }}
                     >
                         <Text style={styles.speakIcon}>🔊</Text>
                     </TouchableOpacity>
                 </View>
-                <Text style={[styles.trText, !item.isActive && styles.textInactive]}>{item.tr}</Text>
+                <Text style={[styles.trText, !item.isActive && styles.textInactive]}>{item.meanings.join(', ')}</Text>
+                
+                <View style={styles.statsRow}>
+                    <Text style={styles.statLine}>Doğru Seri: <Text style={styles.statValueGreen}>{maxStreak}</Text></Text>
+                    <Text style={styles.statLine}>Yanlışlar: <Text style={styles.statValueRed}>{totalWrong}</Text></Text>
+                    <Text style={styles.statLine}>Son: <Text style={styles.statValueMuted}>{lastReview}</Text></Text>
+                </View>
             </View>
             <View style={styles.cardActions}>
                 <TouchableOpacity
@@ -201,6 +250,12 @@ export default function PoolScreen({ navigation }: Props) {
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => navigation.navigate('AddWord', { editWordId: item.id, currentEn: item.en, currentMeanings: item.meanings })}
+                >
+                    <Text style={styles.editButtonText}>✏️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
                     style={styles.deleteButton}
                     onPress={() => handleDelete(item)}
                 >
@@ -208,7 +263,8 @@ export default function PoolScreen({ navigation }: Props) {
                 </TouchableOpacity>
             </View>
         </View>
-    );
+        );
+    };
 
     if (loading) {
         return (
@@ -219,58 +275,93 @@ export default function PoolScreen({ navigation }: Props) {
     }
 
     return (
-        <View style={styles.container}>
-            <TextInput
-                style={styles.searchInput}
-                placeholder="Ara (İng/Tr)"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoCapitalize="none"
-                autoCorrect={false}
-            />
-
-            <View style={styles.filterRow}>
-                <Text style={styles.totalText}>Toplam: {filteredWords.length}</Text>
-                <View style={styles.filterToggle}>
-                    <Text style={styles.filterLabel}>Sadece Aktif</Text>
-                    <Switch
-                        value={showActiveOnly}
-                        onValueChange={setShowActiveOnly}
-                        trackColor={{ false: '#ddd', true: '#34C759' }}
+        <LinearGradient colors={[colors.backgroundGradientStart, colors.backgroundGradientEnd]} style={styles.gradientBg}>
+            <View style={styles.container}>
+                <View style={[styles.searchWrapper, { backgroundColor: colors.card }]}>
+                    <Text style={styles.searchIcon}>🔍</Text>
+                    <TextInput
+                        style={[styles.searchInput, { color: colors.text }]}
+                        placeholder="Kelime ara (İng/Tr)"
+                        placeholderTextColor={colors.textMuted}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoCapitalize="none"
+                        autoCorrect={false}
                     />
                 </View>
+
+                <View style={styles.filterRow}>
+                    <View style={styles.filterControls}>
+                        <TouchableOpacity
+                            style={[styles.sortButton, sortMode === 'newest' && styles.sortButtonActive]}
+                            onPress={() => setSortMode('newest')}
+                        >
+                            <Text style={[styles.sortButtonText, sortMode === 'newest' && styles.sortButtonTextActive]}>Yeni</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.sortButton, sortMode === 'alphabetical' && styles.sortButtonActive]}
+                            onPress={() => setSortMode('alphabetical')}
+                        >
+                            <Text style={[styles.sortButtonText, sortMode === 'alphabetical' && styles.sortButtonTextActive]}>A-Z</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.sortButton, sortMode === 'most_wrong' && styles.sortButtonActive]}
+                            onPress={() => setSortMode('most_wrong')}
+                        >
+                            <Text style={[styles.sortButtonText, sortMode === 'most_wrong' && styles.sortButtonTextActive]}>Zorlar</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <View style={styles.filterToggle}>
+                        <Text style={[styles.filterText, { color: colors.text }]}>Sadece Aktif</Text>
+                        <Switch
+                            value={showActiveOnly}
+                            onValueChange={setShowActiveOnly}
+                            trackColor={{ false: '#ddd', true: '#34C759' }}
+                        />
+                    </View>
+                </View>
+                <View style={styles.infoRow}>
+                    <Text style={[styles.totalText, { color: colors.textMuted }]}>📝 Gösterilen: {filteredWords.length}</Text>
+                    <Text style={styles.muteHint}>
+                        💡 Not: iPhone'da sesi duymak için yandaki çentiğin açık olması gerekir.
+                    </Text>
+                </View>
+
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+                {words.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyEmoji}>📭</Text>
+                        <Text style={styles.emptyText}>Henüz kelime yok</Text>
+                        <Text style={styles.emptySubtext}>İlk kelimeni ekle!</Text>
+                    </View>
+                ) : filteredWords.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyEmoji}>🔍</Text>
+                        <Text style={styles.emptyText}>Eşleşme bulunamadı</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredWords}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderItem}
+                        contentContainerStyle={styles.listContent}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+                        }
+                    />
+                )}
             </View>
-
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-            {words.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>Henüz kelime yok</Text>
-                    <Text style={styles.emptySubtext}>İlk kelimeni ekle!</Text>
-                </View>
-            ) : filteredWords.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>Eşleşme bulunamadı</Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={filteredWords}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderItem}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-                    }
-                />
-            )}
-        </View>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
+    gradientBg: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#fff',
         paddingHorizontal: 16,
         paddingTop: 16,
     },
@@ -278,36 +369,105 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#f8f9ff',
+    },
+    searchWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
         backgroundColor: '#fff',
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    searchIcon: {
+        fontSize: 18,
+        marginRight: 10,
     },
     searchInput: {
-        height: 44,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        paddingHorizontal: 16,
+        flex: 1,
+        height: 46,
         fontSize: 16,
-        backgroundColor: '#f9f9f9',
-        marginBottom: 12,
+        color: '#333',
     },
     filterRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
+    },
+    filterControls: {
+        flexDirection: 'row',
+        gap: 6,
+    },
+    sortButton: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        backgroundColor: '#e0e0e0',
+    },
+    sortButtonActive: {
+        backgroundColor: '#5856D6',
+    },
+    sortButtonText: {
+        fontSize: 12,
+        color: '#666',
+        fontWeight: '600',
+    },
+    sortButtonTextActive: {
+        color: '#fff',
     },
     totalText: {
         fontSize: 14,
-        color: '#666',
+        fontWeight: '500',
+        marginBottom: 12,
     },
     filterToggle: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 6,
     },
-    filterLabel: {
-        fontSize: 14,
+    filterText: {
+        fontSize: 13,
+        fontWeight: '500',
+    },
+    infoRow: {
+        flexDirection: 'column',
+    },
+    muteHint: {
+        fontSize: 11,
+        color: '#999',
+        fontStyle: 'italic',
+        marginBottom: 8,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#f0f0f0',
+    },
+    statLine: {
+        fontSize: 12,
         color: '#666',
-        marginRight: 8,
+    },
+    statValueGreen: {
+        color: '#34C759',
+        fontWeight: '700',
+    },
+    statValueRed: {
+        color: '#FF3B30',
+        fontWeight: '700',
+    },
+    statValueMuted: {
+        color: '#999',
+        fontWeight: '500',
     },
     listContent: {
         paddingBottom: 20,
@@ -315,15 +475,18 @@ const styles = StyleSheet.create({
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f9f9f9',
-        borderRadius: 10,
-        padding: 14,
+        backgroundColor: '#fff',
+        borderRadius: 14,
+        padding: 16,
         marginBottom: 10,
-        borderWidth: 1,
-        borderColor: '#eee',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
     },
     cardInactive: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#f5f5f5',
         opacity: 0.7,
     },
     cardContent: {
@@ -358,9 +521,9 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     statusButton: {
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 8,
     },
     activeButton: {
         backgroundColor: '#34C759',
@@ -374,11 +537,23 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
     },
+    editButton: {
+        backgroundColor: '#FF9500',
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 8,
+    },
+    editButtonText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
     deleteButton: {
         backgroundColor: '#FF3B30',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 8,
     },
     deleteButtonText: {
         color: '#fff',
@@ -391,19 +566,27 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    emptyEmoji: {
+        fontSize: 48,
+        marginBottom: 12,
+    },
     emptyText: {
         fontSize: 18,
-        color: '#999',
-        marginBottom: 8,
+        color: '#666',
+        fontWeight: '500',
+        marginBottom: 6,
     },
     emptySubtext: {
         fontSize: 14,
-        color: '#bbb',
+        color: '#999',
     },
     errorText: {
         color: '#FF3B30',
         textAlign: 'center',
         marginBottom: 12,
         fontSize: 14,
+        backgroundColor: '#FFF5F5',
+        padding: 10,
+        borderRadius: 8,
     },
 });

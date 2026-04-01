@@ -7,8 +7,10 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebase';
+import { useTheme } from '../context/ThemeContext';
 import { ACHIEVEMENTS, checkAchievements, AchievementStats } from '../types/achievements';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -16,6 +18,7 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 type Props = NativeStackScreenProps<RootStackParamList, 'Achievements'>;
 
 export default function AchievementsScreen({ navigation }: Props) {
+    const { colors } = useTheme();
     const [loading, setLoading] = useState(true);
     const [unlockedIds, setUnlockedIds] = useState<string[]>([]);
     const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([]);
@@ -113,7 +116,8 @@ export default function AchievementsScreen({ navigation }: Props) {
     const totalCount = ACHIEVEMENTS.length;
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <LinearGradient colors={[colors.backgroundGradientStart, colors.backgroundGradientEnd]} style={styles.gradientBg}>
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <View style={styles.header}>
                 <Text style={styles.progressText}>
                     {unlockedCount} / {totalCount} Başarım
@@ -155,14 +159,17 @@ export default function AchievementsScreen({ navigation }: Props) {
                     );
                 })}
             </View>
-        </ScrollView>
+            </ScrollView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
+    gradientBg: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     content: {
         paddingHorizontal: 16,
@@ -173,7 +180,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#f8f9ff',
     },
     header: {
         marginBottom: 24,
@@ -205,10 +212,15 @@ const styles = StyleSheet.create({
     card: {
         width: '48%',
         padding: 16,
-        borderRadius: 14,
+        borderRadius: 16,
         marginBottom: 12,
         alignItems: 'center',
         borderWidth: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
     },
     cardUnlocked: {
         backgroundColor: '#FFFDE7',

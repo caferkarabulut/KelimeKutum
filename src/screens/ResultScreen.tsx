@@ -25,9 +25,10 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 export default function ResultScreen({ route, navigation }: Props) {
-    const { score, correct, wrong, wrongItems, wrongIds, mode } = route.params;
+    const { score, correct, wrong, wrongItems, wrongIds, mode, masteredCandidates } = route.params;
     const [saved, setSaved] = useState(false);
     const [retryLoading, setRetryLoading] = useState(false);
+    const [promptedMastery, setPromptedMastery] = useState(false);
 
     useEffect(() => {
         const saveWrongIds = async () => {
@@ -40,13 +41,50 @@ export default function ResultScreen({ route, navigation }: Props) {
                 const userRef = doc(db, 'users', uid);
                 const userSnap = await getDoc(userRef);
 
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+                const totalQuestions = correct + wrong;
+
                 if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    const lastStudyDate = data.lastStudyDate || '';
+                    let currentStreak = data.currentStreak || 0;
+                    let maxStreak = data.maxStreak || 0;
+                    let todayStudiedCount = data.todayStudiedCount || 0;
+                    let todayStudiedDate = data.todayStudiedDate || '';
+
+                    if (lastStudyDate === yesterdayStr) {
+                        currentStreak += 1;
+                    } else if (lastStudyDate !== todayStr) {
+                        currentStreak = 1;
+                    }
+
+                    if (currentStreak > maxStreak) {
+                        maxStreak = currentStreak;
+                    }
+
+                    if (todayStudiedDate === todayStr) {
+                        todayStudiedCount += totalQuestions;
+                    } else {
+                        todayStudiedDate = todayStr;
+                        todayStudiedCount = totalQuestions;
+                    }
+
                     await updateDoc(userRef, {
                         lastWrongIds: wrongIds,
                         lastWrongUpdatedAt: serverTimestamp(),
                         totalTests: increment(1),
                         totalCorrect: increment(correct),
                         totalWrong: increment(wrong),
+                        currentStreak,
+                        maxStreak,
+                        lastStudyDate: todayStr,
+                        todayStudiedDate,
+                        todayStudiedCount,
                     });
                 } else {
                     await setDoc(userRef, {
@@ -59,6 +97,12 @@ export default function ResultScreen({ route, navigation }: Props) {
                         totalTests: 1,
                         totalCorrect: correct,
                         totalWrong: wrong,
+                        currentStreak: 1,
+                        maxStreak: 1,
+                        lastStudyDate: todayStr,
+                        todayStudiedDate: todayStr,
+                        todayStudiedCount: totalQuestions,
+                        dailyGoal: 20,
                     });
                 }
 
@@ -76,6 +120,43 @@ export default function ResultScreen({ route, navigation }: Props) {
 
         saveWrongIds();
     }, [wrongIds, saved]);
+
+    useEffect(() => {
+        if (!promptedMastery && masteredCandidates && masteredCandidates.length > 0) {
+            setPromptedMastery(true);
+            const wordsStr = masteredCandidates.map(c => c.en).join(', ');
+            Alert.alert(
+                'Tebrikler!',
+                `Aşağıdaki kelimeleri 20 testtir hiç yanlış yapmadınız:\n\n${wordsStr}\n\nBu kelimeleri "Ezberlendi" olarak işaretlemek ister misiniz? (Artık testlerde karşınıza çıkmazlar)`,
+                [
+                    { text: 'Hayır', style: 'cancel' },
+                    {
+                        text: 'Evet, Ezberlendi Yap',
+                        onPress: async () => {
+                            const uid = auth.currentUser?.uid;
+                            if (!uid) return;
+                            try {
+                                const userRef = doc(db, 'users', uid);
+                                let count = 0;
+                                for (const candidate of masteredCandidates) {
+                                    const wordRef = doc(db, 'words', candidate.id);
+                                    await updateDoc(wordRef, { isActive: false });
+                                    count++;
+                                }
+                                await updateDoc(userRef, {
+                                    activeWords: increment(-count),
+                                    masteredWords: increment(count),
+                                });
+                                Alert.alert('Başarılı', `${count} adet kelime ezberlendi olarak işaretlendi!`);
+                            } catch (err: any) {
+                                Alert.alert('Hata', err.message || 'Ezberlendi durumu güncellenemedi');
+                            }
+                        }
+                    }
+                ]
+            );
+        }
+    }, [masteredCandidates, promptedMastery]);
 
     const handleRetryWrongOnly = async () => {
         if (wrongIds.length === 0) {
@@ -95,11 +176,14 @@ export default function ResultScreen({ route, navigation }: Props) {
             );
             const snapshot = await getDocs(wordsQuery);
 
-            const wrongWordMap = new Map<string, { en: string; tr: string }>();
+            const wrongWordMap = new Map<string, { en: string; tr: string; meanings: string[] }>();
             snapshot.docs.forEach((docSnap) => {
                 if (wrongIds.includes(docSnap.id)) {
                     const data = docSnap.data();
-                    wrongWordMap.set(docSnap.id, { en: data.en, tr: data.tr });
+                    const meanings: string[] = data.meanings && Array.isArray(data.meanings)
+                        ? data.meanings
+                        : (data.tr ? data.tr.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []);
+                    wrongWordMap.set(docSnap.id, { en: data.en, tr: data.tr, meanings });
                 }
             });
 
@@ -118,6 +202,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                         en: wordData.en,
                         tr: wordData.tr,
                         direction,
+                        meanings: wordData.meanings,
                     });
                 }
             }

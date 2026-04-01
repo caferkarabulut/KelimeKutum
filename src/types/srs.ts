@@ -14,6 +14,7 @@ export interface Word {
     userId: string;
     en: string;
     tr: string;
+    meanings: string[];
     enNorm: string;
     isActive: boolean;
     enProgress: Progress;
@@ -31,6 +32,12 @@ export interface UserStats {
     lastWrongIds: string[];
     lastWrongUpdatedAt: Timestamp | Date | null;
     createdAt: Timestamp | Date | null;
+    currentStreak?: number;
+    maxStreak?: number;
+    lastStudyDate?: string;
+    todayStudiedDate?: string;
+    todayStudiedCount?: number;
+    dailyGoal?: number;
 }
 
 export type TestMode = 'EN_TR' | 'TR_EN' | 'MIXED';

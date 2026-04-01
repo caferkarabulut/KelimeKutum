@@ -6,8 +6,10 @@ import {
     ScrollView,
     ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { collection, query, where, getDocs, doc, getDoc, orderBy, limit } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebase';
+import { useTheme } from '../context/ThemeContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -20,6 +22,7 @@ interface TopWrongWord {
 }
 
 export default function StatsScreen({ navigation }: Props) {
+    const { colors } = useTheme();
     const [loading, setLoading] = useState(true);
     const [userStats, setUserStats] = useState({
         totalWords: 0,
@@ -118,7 +121,8 @@ export default function StatsScreen({ navigation }: Props) {
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <LinearGradient colors={[colors.backgroundGradientStart, colors.backgroundGradientEnd]} style={styles.gradientBg}>
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <View style={styles.scoreCard}>
                 <Text style={[styles.bigScore, { color: getScoreColor(avgScore) }]}>{avgScore}%</Text>
                 <Text style={styles.scoreSubtitle}>Genel Başarı Oranı</Text>
@@ -196,14 +200,17 @@ export default function StatsScreen({ navigation }: Props) {
                     <Text style={styles.emptySubtext}>Test çözdükçe burada istatistiklerin görünecek</Text>
                 </View>
             )}
-        </ScrollView>
+            </ScrollView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
+    gradientBg: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     content: {
         paddingHorizontal: 20,
@@ -214,14 +221,19 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#f8f9ff',
     },
     scoreCard: {
         alignItems: 'center',
-        backgroundColor: '#f8f8f8',
-        borderRadius: 16,
-        padding: 24,
+        backgroundColor: '#fff',
+        borderRadius: 20,
+        padding: 28,
         marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 5,
     },
     bigScore: {
         fontSize: 48,
@@ -240,10 +252,15 @@ const styles = StyleSheet.create({
     statItem: {
         flex: 1,
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#fff',
         marginHorizontal: 4,
-        borderRadius: 12,
+        borderRadius: 14,
         padding: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
     },
     statValue: {
         fontSize: 22,

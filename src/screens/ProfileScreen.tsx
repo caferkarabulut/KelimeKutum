@@ -8,10 +8,13 @@ import {
     Alert,
     ScrollView,
     ActivityIndicator,
+    Switch,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebase';
+import { useTheme } from '../context/ThemeContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
@@ -28,6 +31,7 @@ interface UserData {
 }
 
 export default function ProfileScreen({ navigation }: Props) {
+    const { isDark, colors, toggleTheme } = useTheme();
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentPassword, setCurrentPassword] = useState('');
@@ -142,6 +146,49 @@ export default function ProfileScreen({ navigation }: Props) {
         return Math.round((userData.totalCorrect / total) * 100).toString();
     };
 
+    const handleResetAllData = () => {
+        Alert.alert(
+            '⚠️ DİKKAT: Kalıcı Silme',
+            'Havuzundaki tüm kelimeleri ve istatistiklerini KESİNLİKLE silmek üzeresin. Bu işlemin geri dönüşü yoktur. Devam etmek istiyor musun?',
+            [
+                { text: 'İptal', style: 'cancel' },
+                {
+                    text: 'Evet, Her Şeyi Sil!',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const uid = auth.currentUser?.uid;
+                        if (!uid) return;
+                        setLoading(true);
+                        try {
+                            const wordsQuery = query(collection(db, 'words'), where('userId', '==', uid));
+                            const snapshot = await getDocs(wordsQuery);
+                            const promises = snapshot.docs.map(docSnap => deleteDoc(doc(db, 'words', docSnap.id)));
+                            await Promise.all(promises);
+
+                            const userRef = doc(db, 'users', uid);
+                            await updateDoc(userRef, {
+                                totalWords: 0,
+                                activeWords: 0,
+                                masteredWords: 0,
+                                totalTests: 0,
+                                totalCorrect: 0,
+                                totalWrong: 0,
+                                lastWrongIds: [],
+                            });
+
+                            Alert.alert('Başarılı', 'Bütün veri ve kelimelerin başarıyla sıfırlandı.');
+                            fetchUserData();
+                        } catch (err: any) {
+                            Alert.alert('Hata', err.message || 'Veriler silinemedi.');
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     if (loading) {
         return (
             <View style={styles.centerContainer}>
@@ -151,105 +198,133 @@ export default function ProfileScreen({ navigation }: Props) {
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                        {auth.currentUser?.email?.charAt(0).toUpperCase() || '?'}
-                    </Text>
-                </View>
-                <Text style={styles.email}>{auth.currentUser?.email}</Text>
-                <Text style={styles.memberSince}>Üyelik: {formatDate(userData?.createdAt)}</Text>
-            </View>
-
-            <View style={styles.statsGrid}>
-                <View style={styles.statCard}>
-                    <Text style={styles.statNumber}>{userData?.totalWords || 0}</Text>
-                    <Text style={styles.statLabel}>Toplam Kelime</Text>
-                </View>
-                <View style={styles.statCard}>
-                    <Text style={[styles.statNumber, { color: '#34C759' }]}>{userData?.activeWords || 0}</Text>
-                    <Text style={styles.statLabel}>Aktif</Text>
-                </View>
-                <View style={styles.statCard}>
-                    <Text style={[styles.statNumber, { color: '#8E8E93' }]}>{userData?.masteredWords || 0}</Text>
-                    <Text style={styles.statLabel}>Ezberlenen</Text>
-                </View>
-                <View style={styles.statCard}>
-                    <Text style={[styles.statNumber, { color: '#5856D6' }]}>{userData?.totalTests || 0}</Text>
-                    <Text style={styles.statLabel}>Test Sayısı</Text>
-                </View>
-                <View style={styles.statCard}>
-                    <Text style={[styles.statNumber, { color: '#007AFF' }]}>{getSuccessRate()}%</Text>
-                    <Text style={styles.statLabel}>Başarı Oranı</Text>
-                </View>
-                <View style={styles.statCard}>
-                    <Text style={[styles.statNumber, { color: '#FF9500' }]}>{userData?.totalCorrect || 0}</Text>
-                    <Text style={styles.statLabel}>Toplam Doğru</Text>
-                </View>
-            </View>
-
-            <View style={styles.section}>
-                <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => setShowPasswordForm(!showPasswordForm)}
-                >
-                    <Text style={styles.menuItemText}>🔒 Şifre Değiştir</Text>
-                    <Text style={styles.menuItemArrow}>{showPasswordForm ? '▲' : '▼'}</Text>
-                </TouchableOpacity>
-
-                {showPasswordForm && (
-                    <View style={styles.passwordForm}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Mevcut Şifre"
-                            value={currentPassword}
-                            onChangeText={setCurrentPassword}
-                            secureTextEntry
-                            autoCapitalize="none"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Yeni Şifre"
-                            value={newPassword}
-                            onChangeText={setNewPassword}
-                            secureTextEntry
-                            autoCapitalize="none"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Yeni Şifre (Tekrar)"
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                            secureTextEntry
-                            autoCapitalize="none"
-                        />
-                        <TouchableOpacity
-                            style={[styles.changePasswordButton, passwordLoading && styles.buttonDisabled]}
-                            onPress={handleChangePassword}
-                            disabled={passwordLoading}
-                        >
-                            {passwordLoading ? (
-                                <ActivityIndicator color="#fff" />
-                            ) : (
-                                <Text style={styles.changePasswordText}>Şifreyi Güncelle</Text>
-                            )}
-                        </TouchableOpacity>
+        <LinearGradient colors={[colors.backgroundGradientStart, colors.backgroundGradientEnd]} style={styles.gradientBg}>
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                <View style={[styles.avatarContainer]}>
+                    <View style={styles.avatar}>
+                        <Text style={styles.avatarText}>
+                            {auth.currentUser?.email?.charAt(0).toUpperCase() || '?'}
+                        </Text>
                     </View>
-                )}
-            </View>
+                    <Text style={[styles.email, { color: colors.text }]}>{auth.currentUser?.email}</Text>
+                    <Text style={[styles.memberSince, { color: colors.textMuted }]}>Üyelik: {formatDate(userData?.createdAt)}</Text>
+                </View>
 
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutText}>Çıkış Yap</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                <View style={styles.statsGrid}>
+                    <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.statNumber, { color: colors.text }]}>{userData?.totalWords || 0}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Toplam Kelime</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.statNumber, { color: '#34C759' }]}>{userData?.activeWords || 0}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Aktif</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.statNumber, { color: '#8E8E93' }]}>{userData?.masteredWords || 0}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Ezberlenen</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.statNumber, { color: '#5856D6' }]}>{userData?.totalTests || 0}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Test Sayısı</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.statNumber, { color: '#007AFF' }]}>{getSuccessRate()}%</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Başarı Oranı</Text>
+                    </View>
+                    <View style={[styles.statCard, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.statNumber, { color: '#FF9500' }]}>{userData?.totalCorrect || 0}</Text>
+                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>Toplam Doğru</Text>
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <View style={[styles.menuItem, { backgroundColor: colors.card }]}>
+                        <Text style={[styles.menuItemText, { color: colors.text }]}>🌙 Karanlık Mod</Text>
+                        <Switch
+                            value={isDark}
+                            onValueChange={toggleTheme}
+                            trackColor={{ false: '#ddd', true: '#5856D6' }}
+                            thumbColor={isDark ? '#fff' : '#f4f4f4'}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <TouchableOpacity
+                        style={[styles.menuItem, { backgroundColor: colors.card }]}
+                        onPress={() => setShowPasswordForm(!showPasswordForm)}
+                    >
+                        <Text style={[styles.menuItemText, { color: colors.text }]}>🔒 Şifre Değiştir</Text>
+                        <Text style={[styles.menuItemArrow, { color: colors.textMuted }]}>{showPasswordForm ? '▲' : '▼'}</Text>
+                    </TouchableOpacity>
+
+                    {showPasswordForm && (
+                        <View style={styles.passwordForm}>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder, color: colors.inputText }]}
+                                placeholder="Mevcut Şifre"
+                                placeholderTextColor={colors.textMuted}
+                                value={currentPassword}
+                                onChangeText={setCurrentPassword}
+                                secureTextEntry
+                                autoCapitalize="none"
+                            />
+                            <TextInput
+                                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder, color: colors.inputText }]}
+                                placeholder="Yeni Şifre"
+                                placeholderTextColor={colors.textMuted}
+                                value={newPassword}
+                                onChangeText={setNewPassword}
+                                secureTextEntry
+                                autoCapitalize="none"
+                            />
+                            <TextInput
+                                style={[styles.input, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder, color: colors.inputText }]}
+                                placeholder="Yeni Şifre (Tekrar)"
+                                placeholderTextColor={colors.textMuted}
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                                secureTextEntry
+                                autoCapitalize="none"
+                            />
+                            <TouchableOpacity
+                                style={[styles.changePasswordButton, passwordLoading && styles.buttonDisabled]}
+                                onPress={handleChangePassword}
+                                disabled={passwordLoading}
+                            >
+                                {passwordLoading ? (
+                                    <ActivityIndicator color="#fff" />
+                                ) : (
+                                    <Text style={styles.changePasswordText}>Şifreyi Güncelle</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+
+                <View style={[styles.section, { marginTop: 10, marginBottom: 20 }]}>
+                    <TouchableOpacity
+                        style={[styles.menuItem, { backgroundColor: '#FF3B30' }]}
+                        onPress={handleResetAllData}
+                    >
+                        <Text style={[styles.menuItemText, { color: '#fff', fontWeight: '700' }]}>⚠️ Tüm Verilerimi Sıfırla</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <Text style={styles.logoutText}>Çıkış Yap</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
+    gradientBg: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     content: {
         paddingHorizontal: 24,
@@ -260,7 +335,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#f8f9ff',
     },
     avatarContainer: {
         alignItems: 'center',
@@ -298,11 +373,16 @@ const styles = StyleSheet.create({
     },
     statCard: {
         width: '31%',
-        backgroundColor: '#f5f5f5',
-        borderRadius: 12,
+        backgroundColor: '#fff',
+        borderRadius: 14,
         padding: 14,
         alignItems: 'center',
         marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
     },
     statNumber: {
         fontSize: 22,

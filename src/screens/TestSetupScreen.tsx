@@ -7,9 +7,9 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import { collection, query, where, getDocs, doc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebase';
-import type { TestMode, Progress } from '../types/srs';
+import { TestMode, Progress, createDefaultProgress } from '../types/srs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList, Question } from '../navigation/AppNavigator';
 
@@ -22,15 +22,18 @@ const TEST_MODES: { value: TestMode; label: string }[] = [
     { value: 'MIXED', label: 'Karışık' },
 ];
 const REQUIRED_ACTIVE_WORDS = 50;
-const WRONG_BOOST_RATIO = 0.3;
+const WRONG_BOOST_RATIO = 0.15;
 
 interface WordData {
     id: string;
     en: string;
     tr: string;
+    meanings: string[];
     isActive: boolean;
     enNextReviewAt: Timestamp | Date | null;
     trNextReviewAt: Timestamp | Date | null;
+    enProgress: Progress;
+    trProgress: Progress;
 }
 
 function shuffle<T>(array: T[]): T[] {
@@ -78,13 +81,20 @@ export default function TestSetupScreen({ navigation }: Props) {
 
             const activeWords: WordData[] = wordsSnapshot.docs.map((d) => {
                 const data = d.data();
+                // Support both old tr string and new meanings array
+                const meanings: string[] = data.meanings && Array.isArray(data.meanings)
+                    ? data.meanings
+                    : (data.tr ? (data.tr as string).split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : []);
                 return {
                     id: d.id,
                     en: data.en as string,
                     tr: data.tr as string,
+                    meanings,
                     isActive: true,
                     enNextReviewAt: data.enNextReviewAt ?? null,
                     trNextReviewAt: data.trNextReviewAt ?? null,
+                    enProgress: data.enProgress || createDefaultProgress(),
+                    trProgress: data.trProgress || createDefaultProgress(),
                 };
             });
 
@@ -99,20 +109,31 @@ export default function TestSetupScreen({ navigation }: Props) {
 
 
             let lastWrongIds: string[] = [];
+            let recentTestWordIds: string[] = [];
             try {
                 const userDoc = await getDoc(doc(db, 'users', uid));
                 if (userDoc.exists()) {
                     lastWrongIds = userDoc.data().lastWrongIds || [];
+                    recentTestWordIds = userDoc.data().recentTestWordIds || [];
                 }
             } catch (e) {
                 console.error('Failed to fetch user doc:', e);
             }
+
+            // Filter out words from last 2 tests (ban list)
+            const bannedSet = new Set(recentTestWordIds);
 
             const now = Date.now();
             const boostCount = Math.round(selectedSize * WRONG_BOOST_RATIO);
 
 
             const activeWordIds = new Set(activeWords.map((w) => w.id));
+
+            // Remove banned words from active pool (if enough words remain)
+            let availableWords = activeWords;
+            if (activeWords.length - recentTestWordIds.length >= selectedSize) {
+                availableWords = activeWords.filter(w => !bannedSet.has(w.id));
+            }
 
 
             const validWrongIds = lastWrongIds.filter((id) => activeWordIds.has(id));
@@ -137,7 +158,7 @@ export default function TestSetupScreen({ navigation }: Props) {
             const remainingAfterWrong = selectedSize - wrongPick.length;
             const duePool: { word: WordData; direction: 'EN_TR' | 'TR_EN' }[] = [];
 
-            for (const word of activeWords) {
+            for (const word of availableWords) {
                 if (wrongBoostSet.has(word.id)) continue;
 
                 let direction: 'EN_TR' | 'TR_EN';
@@ -174,9 +195,9 @@ export default function TestSetupScreen({ navigation }: Props) {
 
 
             const remainingAfterDue = selectedSize - wrongPick.length - duePick.length;
-            const restPool: { word: WordData; direction: 'EN_TR' | 'TR_EN' }[] = [];
+            const restPool: { word: WordData; direction: 'EN_TR' | 'TR_EN'; weight: number }[] = [];
 
-            for (const word of activeWords) {
+            for (const word of availableWords) {
                 if (wrongBoostSet.has(word.id)) continue;
                 if (duePickSet.has(word.id)) continue;
 
@@ -186,11 +207,26 @@ export default function TestSetupScreen({ navigation }: Props) {
                 } else {
                     direction = selectedMode;
                 }
-                restPool.push({ word, direction });
+
+                const progress = direction === 'EN_TR' ? word.enProgress : word.trProgress;
+                
+                // Weighting Algorithm
+                // Base weight = 10
+                // Penalty for high streak: -2 per streak
+                // Reward for high wrong count: +5 per wrong
+                let weight = 10 + (progress.wrongCount * 5) - (progress.streak * 2);
+                if (weight < 1) weight = 1;
+
+                restPool.push({ word, direction, weight });
             }
 
-            const shuffledRest = shuffle(restPool);
-            const fillPick = shuffledRest.slice(0, remainingAfterDue);
+            // Weighted Random Shuffle
+            const weightedRest = restPool.map(item => ({
+                ...item,
+                sortScore: Math.random() * item.weight
+            })).sort((a, b) => b.sortScore - a.sortScore);
+
+            const fillPick = weightedRest.slice(0, remainingAfterDue);
 
 
             const allPicks = [...wrongPick, ...duePick, ...fillPick];
@@ -200,8 +236,26 @@ export default function TestSetupScreen({ navigation }: Props) {
                 id: item.word.id,
                 en: item.word.en,
                 tr: item.word.tr,
+                meanings: item.word.meanings,
                 direction: item.direction,
             }));
+
+            // Save current test word IDs to recentTestWordIds (keep last 2 tests)
+            const currentTestWordIds = questions.map(q => q.id);
+            const uniqueCurrentIds = [...new Set(currentTestWordIds)];
+            // Keep only previous test + current test (2 tests total)
+            const updatedRecentIds = [...uniqueCurrentIds];
+            // Add previous test's words too (up to 2 tests worth)
+            const prevTestIds = recentTestWordIds.filter(id => !uniqueCurrentIds.includes(id));
+            updatedRecentIds.push(...prevTestIds.slice(0, selectedSize));
+
+            try {
+                await updateDoc(doc(db, 'users', uid), {
+                    recentTestWordIds: updatedRecentIds,
+                });
+            } catch (e) {
+                console.error('Failed to save recentTestWordIds:', e);
+            }
 
             if (__DEV__) {
                 console.log('=== TEST SELECTION DEBUG ===');

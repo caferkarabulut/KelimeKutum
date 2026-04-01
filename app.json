@@ -25,6 +25,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "326515d6-28fc-46e1-8630-8cd421329f93"
+      }
+    },
+    "owner": "cafka",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/326515d6-28fc-46e1-8630-8cd421329f93"
     }
   }
 }
